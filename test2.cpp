@@ -1,5 +1,5 @@
 
-#include "stdafx.h"
+//#include "stdafx.h"
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include "opencv2\highgui\highgui.hpp"
@@ -9,12 +9,12 @@
 #include <iostream>
 #include "math.h"
 #include <windows.h>
+#include "feature_detect.h"
+#include "image_grabber.h"
 
-//#include "c-pioneer2at.cpp"
 
-//#include "myGSL.h"
+#include "c-pioneer2at.cpp"
 
-//#include "myGSL.cpp"
 
 
 using namespace cv;
@@ -43,22 +43,31 @@ int main () {
 	//start 
 	char messgn_forward [20] = "forward 1000"; // Сообщение движения вперед со скоростью 1000
 	char messgn_stop [10] = "stop"; //Сообщение стоп
-	bool flag = true;
-
-	for (int i=0; i<10; i++){
-		camera (flag); // Вызов функции camera - поиск углов
+	feature_detector f_d;   //!!!!!!!!!!!!!!
+	//Тело- движение->стоп->поиск точек->отправка точек
+	/*
+	for (int i=0; i<5;i++)
+	{
+		network_listener(messgn_forward);
+		network_listener(messgn_stop);
+		camera();
+		network_listener(f_d.detected_points); // FORMAT OF MESSAGE? 
+	}
+	
+	*/
+		camera (); // Вызов функции camera - поиск углов
 		//network_listener (messgn_forward);
 	//	Sleep (1000);
 		//network_listener(messgn_stop);
-		flag = !flag;
-		camera (flag);
-		My_cornerHarris (0,0);
+		//flag = !flag;
+		//camera (flag);
+		//My_cornerHarris (0,0);
 		
-	}
+	
 }
 
 
-void camera(bool flag)
+void camera()
 {
 	
 
@@ -89,44 +98,23 @@ for(;;)
 
 	cvPutText( image1, "Press, when you ready", cv1, &font, color );
 	cvShowImage( "Start", image1);
-	char messgn_to_bot[64]="forward 100";
 	//Начинаем по клавише + сохранение картинок - вторая temp для наложения углов на оригинал
 	if( cvWaitKey(10) >= 0 )  // Можно условие изменить
 	{
 		//	src_first = cvRetrieveFrame ( capture ) ;
 		//	temp_first = cvRetrieveFrame ( capture ) ; 
 			imagesrc = cvRetrieveFrame ( capture ) ;
-			if (flag)
-			cvSaveImage ("E:\\source_1.jpg", imagesrc);
-			else cvSaveImage ("E:\\source_2.jpg", imagesrc);
-		//	src_first = cvLoadImage ("E:\\source_test_first.jpg", 1);
-	//		temp_first = src_first;
-//			src_second = cvLoadImage ("E:\\source_test_second.jpg", 1);
-		//	temp_second = src_second;
+			vector < point_features > tst;
+			
+			const IplImage* im;
+			im = cvRetrieveFrame (capture);
+			f_d.add_frame(im,tst,tst); 
+			
 			break;
 	}
 	
 
 }
-
-	//Делаем картинку серой
-//	cvtColor( src, src_gray, CV_BGR2GRAY );
-	
-	/// Создаем окно
-//	namedWindow( source_window, CV_WINDOW_AUTOSIZE );
-	//createTrackbar( "Threshold: ", source_window, &thresh, max_thresh, My_cornerHarris );
-//	imshow( source_window, src );
-	//Вызываем функцию
-	
-	
-//  waitKey(0);
-
-//Удаляем все
-//cvReleaseCapture( &capture );
-//cvDestroyWindow( "Motion" );
-
-
-//	return (0);
 }
 
 
@@ -226,51 +214,6 @@ void My_cornerHarris (int, void*)
 	double x=sin(alpha * dstn);
 	double y=cos(alpha * dstn);
 
-	//Ищем матрицу поворота -> MyGSL.cpp
-
-	/*solve (point_vector_first, point_vector_second, point_vector_dst);
-	
-	for (int i=0; i<point_vector_dst.size();i++){
-		if (point_vector_dst[i].first < p_w/2){
-			//Повернуть направо
-		}
-		if (point_vector_dst[i].first > p_w/2){
-			//Повернуть налево
-		}
-		//Как-то определить точность попадания по горизонтали		
-	}*/
-	//Проехать на заданное расстояние (из GSL)
-
-	//Повернуться на 90 градусов направо, пока не найдутся еще точки
-
-
-
-
-
-	//Normalizing
-	/*normalize ( dst, dst_norm,0 , 255, NORM_MINMAX, CV_32FC1, Mat() );
-	convertScaleAbs (dst_norm, dst_norm_scaled) ;*/
-	//Рисуем кружки вокруг углов
-	/*for ( int j =0; j< dst_norm.rows; j++)
-	{
-		for (int i=0; i<dst_norm.cols; i++)
-		{
-			if ((int) dst_norm.at<float>(j,i) > thresh)
-			{
-				circle(dst_norm_scaled, Point (i,j),5,Scalar(0),2,8,0);
-				circle(temp, Point (i,j),5,Scalar(0),2,8,0);
-
-			}
-		}
-	}*/
-	//IplImage* image2=cvCloneImage(&(IplImage)dst_norm_scaled);
-
-	//Result 
-	//namedWindow ( corners_window, CV_WINDOW_AUTOSIZE);
-	//cvSaveImage ("E:\\result.jpg", image2);
-
-	//imshow ( corners_window,dst_norm_scaled);
-	
 
 }
 
