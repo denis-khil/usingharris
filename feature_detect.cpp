@@ -2,13 +2,14 @@
 #include"feature_detect.h"
 
 
+
 int feature_detector::likeness_of_points(const point_features& p1, const point_features& p2){
 	/* I. Position */
-	int max_allowed_position = 20;
+	int max_allowed_position = 100;
 	/* lesser the distance between the points, lesser result*/
 	double position_likeness = sqrt((double)(p1.x-p2.x)*(p1.x-p2.x) + (p1.y-p2.y)*(p1.y-p2.y));
 	if(position_likeness>max_allowed_position)
-		position_likeness=0;
+		return 0;
 	
 	return 100/position_likeness; /* TODO: use sigmoidal curve */
 }
@@ -37,6 +38,39 @@ int row_with_max_similarity(vector < vector < int > > &similarity, int& pos1, in
 			similarity[pos1][j]=0;
 		return 1;}}
 
+void feature_detector::coord_search(vector < point_features >& p_first, vector < point_features >& p_second, vector < point_features>& p_result)
+{
+	int p_w=640;
+	int p_h=480;
+	int focus=691; //фокус камеры, равный 690.90
+	double alpha, betta; // углы
+	double dstn; // расстояние до объекта
+	int tran=1; //Расстояние между снимками
+	//Находим углы, из 2х углов находим расстояние до объекта	
+	for (int t=0; t<p_first.size();t++){
+		/* calculate U */
+		/* TODO : locate point on image (left or right) */
+		double ttmp = p_w/2 - p_first[t].x; //p_w/2 - 
+		/* alpha = arctg ( u/focus )*/
+		double tmp = (ttmp) / focus; 
+		//tmp = 0.026;
+		alpha = atan (tmp);
+		double ttmpp = p_w/2 - p_second[t].x; //p_w/2 - 
+		double tmpp = (ttmpp) / focus;
+		//tmpp = 0.0043;
+		betta = atan (tmpp);
+		dstn = tran * sin(180-betta) / sin(180-alpha+betta);
+		/* Сalculate X,Y */
+		double x=sin(alpha * dstn);
+		double y=cos(alpha * dstn);
+		p_result[t].x=x;
+		p_result[t].y=y;
+	}
+
+
+
+}
+
 void feature_detector::add_frame(const IplImage* src, vector < point_features >& p_old, vector < point_features >& p_new){
 	int w,h;
 	
@@ -47,6 +81,7 @@ void feature_detector::add_frame(const IplImage* src, vector < point_features >&
 	int eig_block_size = 3;
 	int use_harris = true;
 	double k = 0.09;
+	
 	CvPoint2D32f corners[MAX_CORNERS] = {0};
 	
 	IplImage* eig_image = 0;
@@ -59,7 +94,9 @@ void feature_detector::add_frame(const IplImage* src, vector < point_features >&
 	/* DETECTOR */
 	
 	cv::Mat temp_;
+	cv::Mat temp_2;
 	temp_=src;
+	temp_2=src;
 	IplImage* src_gray = 0;
 	/*image sizes*/
 	w = src->width;
@@ -82,17 +119,21 @@ void feature_detector::add_frame(const IplImage* src, vector < point_features >&
 	//p_new.resize(corner_count);
 	//Заполняем контейнер и рисуем кружки
 	IplImage* image_for_save=cvCloneImage(&(IplImage)temp_); //src
-	cvSaveImage ("E:\\result_first.jpg", image_for_save);
 	point_features p_f;
+	if (detected_points.size() !=0)
+		for (int l=0; l<detected_points.size()-1;l++)		
+		cv::circle(temp_, cv::Point (detected_points[l].x,detected_points[l].y),5,cv::Scalar(100),2,8,0);
+	
 	for( int i = 0; i < corner_count; i++) {
 			p_f.x=corners[i].x;
 			p_f.y=corners[i].y;
 			new_points.push_back(p_f);
 			//p_new.push_back (corners[i].x,corners[i].y);
 			cv::circle(temp_, cv::Point (corners[i].x,corners[i].y),5,cv::Scalar(0),2,8,0);
+			
 	}
-	image_for_save=cvCloneImage(&(IplImage)temp_); //src
-	cvSaveImage ("E:\\result_first.jpg", image_for_save);
+//	image_for_save=cvCloneImage(&(IplImage)temp_); //src
+//	cvSaveImage ("E:\\result_first.jpg", image_for_save);
 
 	
 	/*End of detector*/
@@ -101,8 +142,9 @@ void feature_detector::add_frame(const IplImage* src, vector < point_features >&
 	if(detected_points.empty()){
 		vector < point_features > empt;
 		detected_points = new_points;
-		//return empt;}
-	}
+		}
+	
+	else{
 	/* calculate similarities with greedy algorythm */
 	/* 1. create similarities table: rows --- new points, cols --- old ones */
 	vector < vector < int > > similarity;
@@ -117,5 +159,39 @@ void feature_detector::add_frame(const IplImage* src, vector < point_features >&
 		p_new.push_back(new_points[pos1]);
 		p_old.push_back(detected_points[pos2]);}
 	
+	
+
+	if (p_new.size() !=0)
+		for (int k=0; k<p_new.size()-1;k++)		
+		cv::circle(temp_, cv::Point (p_new[k].x,p_new[k].y),5,cv::Scalar(255,255,255),2,8,0);
+	if (p_old.size() !=0)
+		for (int j=0; j<p_old.size()-1;j++)		
+		cv::circle(temp_, cv::Point (p_old[j].x,p_old[j].y),5,cv::Scalar(0,215,255),2,8,0);
+	//IplImage* img_=cvCloneImage(&(IplImage)temp_); 
+	//cvSaveImage ("E:\\result_sim.jpg", img_);
+
 	/* replace detected points from the old frame with newer ones*/
-	detected_points = new_points;}
+	detected_points = new_points;
+
+	for( int i = 0; i < detected_points.size(); i++) {
+			cv::Mat im;	
+			
+			cv::circle(temp_2, cv::Point (detected_points[i].x,detected_points[i].y),5,cv::Scalar(0),2,8,0);
+	}
+		if (p_new.size() !=0)
+		for (int n=0; n<p_new.size()-1;n++)		
+		{
+			cv::Point p1;
+			cv::Point p2;
+			p1.x=p_new[n].x;
+			p1.y=p_new[n].y;
+			p2.x=p_old[n].x;
+			p2.y=p_old[n].y;
+			
+			cv::line(temp_,p1,p2,cv::Scalar(0,0,255),2,8,0);
+		}
+	
+
+	IplImage* img_sim=cvCloneImage(&(IplImage)temp_2); //src
+	cvSaveImage ("E:\\result_sim.jpg", img_sim);}
+}

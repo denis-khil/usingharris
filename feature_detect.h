@@ -27,6 +27,8 @@ class feature_detector{
 	/* get new image;
 	 * returns similarities between current and last image in sequence */
 	void add_frame(const IplImage*, vector < point_features >& p_old, vector < point_features >& p_new);
+	/* calculates coords x,y */
+	void feature_detector::coord_search(vector < point_features >& p_first, vector < point_features >& p_second, vector < point_features>& p_result);
 };
 
 
