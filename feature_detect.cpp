@@ -51,6 +51,7 @@ void feature_detector::coord_search(vector < point_features >& p_first, vector <
 		/* calculate U */
 		/* TODO : locate point on image (left or right) */
 		double ttmp = p_w/2 - p_first[t].x; //p_w/2 - 
+		ttmp = fabs (ttmp);
 		/* alpha = arctg ( u/focus )*/
 		double tmp = (ttmp) / focus; 
 		//tmp = 0.026;
@@ -59,7 +60,7 @@ void feature_detector::coord_search(vector < point_features >& p_first, vector <
 		double tmpp = (ttmpp) / focus;
 		//tmpp = 0.0043;
 		betta = atan (tmpp);
-		dstn = tran * sin(180-betta) / sin(180-alpha+betta);
+		dstn = tran * sin(betta) / sin(betta-alpha);
 		/* Ñalculate X,Y */
 		double x=sin(alpha * dstn);
 		double y=cos(alpha * dstn);
@@ -76,8 +77,8 @@ void feature_detector::add_frame(const IplImage* src, vector < point_features >&
 	
 	const int MAX_CORNERS = 100;
 	int corner_count = MAX_CORNERS;
-	double quality_level = 0.5;
-	double min_distance = 2;
+	double quality_level = 0.1;
+	double min_distance = 1;
 	int eig_block_size = 3;
 	int use_harris = true;
 	double k = 0.09;
@@ -132,8 +133,8 @@ void feature_detector::add_frame(const IplImage* src, vector < point_features >&
 			cv::circle(temp_, cv::Point (corners[i].x,corners[i].y),5,cv::Scalar(0),2,8,0);
 			
 	}
-//	image_for_save=cvCloneImage(&(IplImage)temp_); //src
-//	cvSaveImage ("E:\\result_first.jpg", image_for_save);
+	image_for_save=cvCloneImage(&(IplImage)temp_); //src
+	cvSaveImage ("E:\\impl_im.jpg", image_for_save);
 
 	
 	/*End of detector*/
